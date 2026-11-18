@@ -1,0 +1,2796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미니 게임 천국 (3-in-1 Arcade)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #311042 100%);
+            color: #F8FAFC;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        .arcade-container {
+            background-color: #1E293B;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 2px solid #334155;
+            text-align: center;
+            position: relative;
+            max-width: 440px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #38BDF8;
+            font-size: 1.6rem;
+            margin-bottom: 12px;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+        }
+
+        .game-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            background-color: #0F172A;
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid #334155;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background-color: transparent;
+            color: #94A3B8;
+            border: none;
+            padding: 8px 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background-color: #38BDF8;
+            color: #0F172A;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .status-board {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #0F172A;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #CBD5E1;
+            border: 1px solid #334155;
+        }
+
+        .status-board span {
+            color: #FACC15;
+            font-size: 0.95rem;
+        }
+
+        .combo-badge {
+            color: #FB923C !important;
+            text-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 360px;
+            height: 480px;
+            margin: 0 auto;
+        }
+
+        canvas#gameCanvas {
+            background-color: #0F172A;
+            border: 3px solid #334155;
+            border-radius: 16px;
+            display: block;
+            touch-action: none;
+        }
+
+        .tetris-panel {
+            display: none;
+            position: absolute;
+            top: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #334155;
+            border-radius: 10px;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .tetris-panel span {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #38BDF8;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        #holdBox { left: 8px; }
+        #nextPreviewBox { right: 8px; }
+
+        .controls-info {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #94A3B8;
+            background-color: #0F172A;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .touch-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+            max-width: 260px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .ctrl-btn {
+            background-color: #334155;
+            color: #F8FAFC;
+            border: 1px solid #475569;
+            padding: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .ctrl-btn:active {
+            background-color: #38BDF8;
+            color: #0F172A;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 18px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .overlay h2 {
+            font-size: 1.5rem;
+            color: #38BDF8;
+            margin-bottom: 8px;
+        }
+
+        .overlay p {
+            font-size: 0.9rem;
+            color: #CBD5E1;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .btn {
+            background-color: #38BDF8;
+            color: #0F172A;
+            border: none;
+            padding: 10px 22px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: transform 0.1s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-secondary {
+            background-color: #475569;
+            color: #F8FAFC;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .settings-scroll-area {
+            width: 100%;
+            max-height: 360px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 4px;
+            margin-bottom: 6px;
+        }
+
+        .settings-scroll-area::-webkit-scrollbar {
+            width: 5px;
+        }
+        .settings-scroll-area::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+
+        .dev-scroll-area {
+            width: 100%;
+            max-height: 460px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 4px;
+        }
+
+        .dev-scroll-area::-webkit-scrollbar {
+            width: 5px;
+        }
+        .dev-scroll-area::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+
+        .dev-box {
+            width: 92%;
+            background-color: #0F172A;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .dev-box-title {
+            font-size: 0.82rem;
+            color: #38BDF8;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .dev-input {
+            width: 90%;
+            padding: 7px 10px;
+            border-radius: 10px;
+            border: 2px solid #334155;
+            background-color: #1E293B;
+            color: #F8FAFC;
+            font-size: 0.9rem;
+            text-align: center;
+            outline: none;
+            margin-bottom: 6px;
+        }
+
+        .dev-input:focus {
+            border-color: #38BDF8;
+        }
+
+        .dev-label-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .dev-sub-label {
+            font-size: 0.75rem;
+            color: #94A3B8;
+            margin-bottom: 3px;
+        }
+
+        .dev-quick-btns {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            background-color: #1E293B;
+            color: #FACC15;
+            border: 1px solid #FACC15;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .quick-btn:hover {
+            background-color: #FACC15;
+            color: #0F172A;
+        }
+
+        .dev-error {
+            color: #F87171;
+            font-size: 0.85rem;
+            min-height: 20px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 90%;
+            margin-bottom: 10px;
+            background-color: #0F172A;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .settings-item.column {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            cursor: ns-resize;
+        }
+
+        .settings-item.column:hover {
+            border-color: #38BDF8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .settings-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .settings-item span {
+            font-size: 0.92rem;
+            font-weight: bold;
+            color: #F8FAFC;
+        }
+
+        .sensitivity-badge {
+            font-size: 0.85rem !important;
+            color: #38BDF8 !important;
+            background: rgba(56, 189, 248, 0.15);
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        .wheel-hint {
+            font-size: 0.72rem !important;
+            color: #94A3B8 !important;
+            font-weight: normal !important;
+            text-align: center;
+        }
+
+        .sensitivity-slider {
+            width: 100%;
+            accent-color: #38BDF8;
+            cursor: pointer;
+            height: 6px;
+            border-radius: 5px;
+        }
+
+        .sensitivity-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: #94A3B8;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #475569;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #38BDF8;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .perfect-popup {
+            position: absolute;
+            top: 38%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            font-size: 1.85rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #00F0FF, #0000FF, #8B00FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 25px rgba(255, 255, 255, 0.9);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 5;
+            max-width: 310px;
+            text-align: center;
+            word-break: keep-all;
+            line-height: 1.2;
+        }
+
+        .perfect-popup.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="arcade-container">
+        <h1>🕹️ 미니 게임 천국</h1>
+
+        <div class="game-tabs">
+            <button class="tab-btn active" onclick="switchGame('blockBlast', event)">💥 블럭 블라스트</button>
+            <button class="tab-btn" onclick="switchGame('tetris', event)">🧩 일반 테트리스</button>
+            <button class="tab-btn" onclick="switchGame('tetrisHard', event)">🔥 테트리스 (하드)</button>
+        </div>
+
+        <div class="status-board" id="statusBoard"></div>
+
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="360" height="480"></canvas>
+            <div id="perfectPopup" class="perfect-popup">PERFECT CLEAR! 3X</div>
+            
+            <div class="tetris-panel" id="holdBox">
+                <span>HOLD (C)</span>
+                <canvas id="holdCanvas" width="55" height="55"></canvas>
+            </div>
+
+            <div class="tetris-panel" id="nextPreviewBox">
+                <span>NEXT</span>
+                <canvas id="nextCanvas" width="55" height="55"></canvas>
+            </div>
+        </div>
+
+        <div class="controls-info" id="controlsInfo"></div>
+
+        <div class="touch-controls" id="touchControls">
+            <button class="ctrl-btn" id="btnHold">HOLD</button>
+            <button class="ctrl-btn" id="btnUp">▲</button>
+            <button class="ctrl-btn" id="btnReset">RESET (R)</button>
+            <button class="ctrl-btn" id="btnLeft">◄</button>
+            <button class="ctrl-btn" id="btnDown">▼</button>
+            <button class="ctrl-btn" id="btnRight">►</button>
+        </div>
+
+        <div id="gameOverlay" class="overlay">
+            <h2 id="overlayTitle">미니 게임 선택</h2>
+            <p id="overlayText">게임 탭을 고르고 시작 버튼을 누르세요!</p>
+            <button class="btn" id="startBtn" onclick="startGame()">게임 시작</button>
+        </div>
+
+        <!-- 일반 설정 창 오버레이 -->
+        <div id="settingsOverlay" class="overlay" style="display: none;">
+            <h2 id="settingsTitle">⚙️ 게임 설정</h2>
+            <p>ESC 키를 누르면 게임으로 돌아갑니다.</p>
+            
+            <div class="settings-scroll-area" id="settingsScrollArea">
+                <div class="settings-item" id="settingBBSeedItem">
+                    <span>🧱 시작 시 초기 블록 배치</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="bbSeedBoardToggle" checked onchange="toggleBBSeedBoard(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <span>🔊 효과음 (SFX)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="sfxToggle" checked onchange="toggleSfx(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <span>🌈 무지개 효과</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="rainbowToggle" checked onchange="toggleRainbow(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item">
+                    <span>💥 블록 착지 효과</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="lockEffectToggle" checked onchange="toggleLockEffect(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-item column" id="sensitivityWheelBox">
+                    <div class="settings-item-header">
+                        <span>↔️ 테트리스 좌우 감도</span>
+                        <span id="moveSensitivityValue" class="sensitivity-badge">5단계 (보통)</span>
+                    </div>
+                    <input type="range" id="moveSensitivitySlider" class="sensitivity-slider" min="1" max="10" value="5" oninput="updateMoveSensitivity(this.value)">
+                    <div class="sensitivity-labels">
+                        <span>느림 (1)</span>
+                        <span>보통 (5)</span>
+                        <span>매우 빠름 (10)</span>
+                    </div>
+                    <span class="wheel-hint">🖱️ 이 영역에서 마우스 휠을 위/아래로 굴려 조절 가능</span>
+                </div>
+            </div>
+
+            <button class="btn" onclick="closeSettings()">닫기 (Resume)</button>
+        </div>
+
+        <!-- 개발자 코드 오버레이 -->
+        <div id="devOverlay" class="overlay" style="display: none;">
+            <div id="devAuthSection" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <h2>🛠️ 개발자 모드</h2>
+                <p>개발자 코드를 입력하세요</p>
+                <input type="password" id="devCodeInput" class="dev-input" placeholder="개발자 코드 입력" onkeydown="if(event.key==='Enter') verifyDevCode()" />
+                <div id="devErrorMsg" class="dev-error"></div>
+                <div class="btn-row">
+                    <button class="btn" onclick="verifyDevCode()">확인</button>
+                    <button class="btn btn-secondary" onclick="closeDevModal()">취소</button>
+                </div>
+            </div>
+
+            <div id="devScoreSection" style="width: 100%; display: none; flex-direction: column; align-items: center;">
+                <h2>⚡ 개발자 콘솔</h2>
+
+                <div class="dev-scroll-area">
+                    <div class="dev-box">
+                        <div class="dev-box-title" id="devCurrentGameLabel">현재 게임 점수 조작</div>
+                        <input type="number" id="devScoreInput" class="dev-input" placeholder="설정할 점수 입력" step="10" onkeydown="if(event.key==='Enter') applyDevSettings()" />
+                        <div class="dev-quick-btns">
+                            <button class="quick-btn" onclick="addDevScore(100)">+100</button>
+                            <button class="quick-btn" onclick="addDevScore(1000)">+1,000</button>
+                            <button class="quick-btn" onclick="addDevScore(10000)">+10,000</button>
+                        </div>
+                    </div>
+
+                    <div class="dev-box">
+                        <div class="dev-box-title">🧩 일반 테트리스 속도 배율 (화면 비표시)</div>
+                        <input type="number" id="devNormalSpeedInput" class="dev-input" placeholder="속도 배율 (예: 1.0)" step="0.1" min="0.1" max="20" onkeydown="if(event.key==='Enter') applyDevSettings()" />
+                        <div class="dev-quick-btns">
+                            <button class="quick-btn" onclick="setDevNormalSpeed(0.5)">0.5x</button>
+                            <button class="quick-btn" onclick="setDevNormalSpeed(1.0)">1.0x</button>
+                            <button class="quick-btn" onclick="setDevNormalSpeed(2.0)">2.0x</button>
+                            <button class="quick-btn" onclick="setDevNormalSpeed(3.0)">3.0x</button>
+                        </div>
+                    </div>
+
+                    <div class="dev-box">
+                        <div class="dev-box-title">🌈 퍼펙트 화면 메시지 설정</div>
+                        <div class="dev-label-row">
+                            <span class="dev-sub-label">퍼펙트 클리어 (3배) 문구</span>
+                            <input type="text" id="devPerfectMsgInput" class="dev-input" placeholder="PERFECT CLEAR! 3X" maxlength="30" onkeydown="if(event.key==='Enter') applyDevSettings()" />
+                        </div>
+                        <div class="dev-label-row" style="margin-bottom: 0;">
+                            <span class="dev-sub-label">테트리스 미니 퍼펙트 (2배) 문구</span>
+                            <input type="text" id="devMiniPerfectMsgInput" class="dev-input" style="margin-bottom: 0;" placeholder="MINI PERFECT! 2X" maxlength="30" onkeydown="if(event.key==='Enter') applyDevSettings()" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn" onclick="applyDevSettings()">설정 적용</button>
+                    <button class="btn btn-secondary" onclick="closeDevModal()">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const nextCanvas = document.getElementById('nextCanvas');
+        const nextCtx = nextCanvas.getContext('2d');
+        const holdCanvas = document.getElementById('holdCanvas');
+        const holdCtx = holdCanvas.getContext('2d');
+
+        const nextPreviewBox = document.getElementById('nextPreviewBox');
+        const holdBox = document.getElementById('holdBox');
+        const touchControls = document.getElementById('touchControls');
+
+        const statusBoard = document.getElementById('statusBoard');
+        const controlsInfo = document.getElementById('controlsInfo');
+        const overlay = document.getElementById('gameOverlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayText = document.getElementById('overlayText');
+        const startBtn = document.getElementById('startBtn');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const settingsTitle = document.getElementById('settingsTitle');
+        const settingBBSeedItem = document.getElementById('settingBBSeedItem');
+        const sensitivityWheelBox = document.getElementById('sensitivityWheelBox');
+        const devOverlay = document.getElementById('devOverlay');
+        const devAuthSection = document.getElementById('devAuthSection');
+        const devScoreSection = document.getElementById('devScoreSection');
+        const devCodeInput = document.getElementById('devCodeInput');
+        const devScoreInput = document.getElementById('devScoreInput');
+        const devNormalSpeedInput = document.getElementById('devNormalSpeedInput');
+        const devPerfectMsgInput = document.getElementById('devPerfectMsgInput');
+        const devMiniPerfectMsgInput = document.getElementById('devMiniPerfectMsgInput');
+        const devErrorMsg = document.getElementById('devErrorMsg');
+        const perfectPopup = document.getElementById('perfectPopup');
+
+        let currentGame = 'blockBlast';
+        let isGameRunning = false;
+        let isPaused = false;
+        let isDevModalOpen = false;
+        let wasRunningBeforeDev = false;
+        let useRainbowEffect = true;
+        let useLockEffect = true;
+        let useBBSeedBoard = true;
+        let useSfx = true;
+        let animationId = null;
+
+        let normalTetrisSpeedMultiplier = 1.0;
+
+        let customPerfectText = "PERFECT CLEAR! 3X";
+        let customMiniPerfectText = "MINI PERFECT! 2X";
+
+        let perfectFlashTimer = 0;
+
+        const devComboKeys = { KeyD: false, KeyO: false };
+        const DEV_SECRET_CODE = "hadonge2";
+
+        const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, Space: false, KeyC: false };
+
+        /* --- Web Audio API 경쾌한 효과음 신디사이저 --- */
+        let audioCtx = null;
+        function playTone(freq, duration = 0.08, type = 'sine', volume = 0.12, delay = 0) {
+            if (!useSfx) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const now = audioCtx.currentTime + delay;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(volume, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+            } catch (e) {}
+        }
+
+        function playSfxPickup() {
+            playTone(520, 0.05, 'sine', 0.08);
+        }
+
+        function playSfxPlace() {
+            playTone(300, 0.07, 'triangle', 0.14);
+            playTone(440, 0.06, 'sine', 0.08, 0.02);
+        }
+
+        function playSfxClear(combo = 1, lines = 1) {
+            const baseFreq = Math.min(880, 440 + (combo - 1) * 55);
+            playTone(baseFreq, 0.12, 'triangle', 0.16, 0);
+            playTone(baseFreq * 1.25, 0.14, 'triangle', 0.16, 0.06);
+            playTone(baseFreq * 1.5, 0.2, 'sine', 0.18, 0.12);
+            if (lines >= 2 || combo >= 3) {
+                playTone(baseFreq * 2, 0.25, 'sine', 0.15, 0.18);
+            }
+        }
+
+        function playSfxGameOver() {
+            playTone(320, 0.18, 'sawtooth', 0.12, 0);
+            playTone(260, 0.2, 'sawtooth', 0.12, 0.14);
+            playTone(190, 0.35, 'sawtooth', 0.12, 0.28);
+        }
+
+        let horizontalSensitivity = 5;
+        let horizontalDasDelay = 150;
+
+        const tetrisHoldState = {
+            ArrowLeft: { active: false, startTime: 0, lastMoveTime: 0, rate: 45 },
+            ArrowRight: { active: false, startTime: 0, lastMoveTime: 0, rate: 45 },
+            ArrowDown: { active: false, startTime: 0, lastMoveTime: 0, rate: 45 },
+            ArrowUp: { active: false, startTime: 0, lastMoveTime: 0, rate: 130 }
+        };
+        const DEFAULT_DAS_DELAY = 150;
+
+        function updateMoveSensitivity(val) {
+            const level = Math.min(10, Math.max(1, parseInt(val, 10) || 5));
+            horizontalSensitivity = level;
+
+            const slider = document.getElementById('moveSensitivitySlider');
+            if (slider && parseInt(slider.value, 10) !== level) {
+                slider.value = level;
+            }
+
+            horizontalDasDelay = Math.round(230 - (level - 1) * (170 / 9));
+            const horizontalRate = Math.round(95 - (level - 1) * (80 / 9));
+
+            tetrisHoldState.ArrowLeft.rate = horizontalRate;
+            tetrisHoldState.ArrowRight.rate = horizontalRate;
+
+            const badge = document.getElementById('moveSensitivityValue');
+            if (badge) {
+                let desc = '보통';
+                if (level <= 2) desc = '매우 느림';
+                else if (level <= 4) desc = '느림';
+                else if (level === 5) desc = '보통';
+                else if (level <= 8) desc = '빠름';
+                else desc = '매우 빠름';
+                badge.innerText = `${level}단계 (${desc})`;
+            }
+        }
+
+        if (sensitivityWheelBox) {
+            sensitivityWheelBox.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const delta = e.deltaY < 0 ? 1 : -1;
+                updateMoveSensitivity(horizontalSensitivity + delta);
+            }, { passive: false });
+        }
+
+        function resetHoldKeys() {
+            for (let k in tetrisHoldState) {
+                tetrisHoldState[k].active = false;
+            }
+        }
+
+        function toggleBBSeedBoard(enabled) {
+            useBBSeedBoard = enabled;
+        }
+
+        function toggleSfx(enabled) {
+            useSfx = enabled;
+            if (enabled) playSfxPickup();
+        }
+
+        function toggleRainbow(enabled) {
+            useRainbowEffect = enabled;
+            if (isPaused) {
+                if (currentGame === 'blockBlast') renderBlockBlast();
+                if (currentGame.startsWith('tetris')) renderTetris();
+            }
+        }
+
+        function toggleLockEffect(enabled) {
+            useLockEffect = enabled;
+            if (!enabled) {
+                lockFlashes = [];
+            }
+        }
+
+        function updateSettingsVisibilityForCurrentGame() {
+            const isBlockBlast = currentGame === 'blockBlast';
+            const isTetris = currentGame.startsWith('tetris');
+
+            if (settingsTitle) {
+                if (currentGame === 'blockBlast') settingsTitle.innerText = '💥 블럭 블라스트 설정';
+                else if (currentGame === 'tetris') settingsTitle.innerText = '🧩 일반 테트리스 설정';
+                else if (currentGame === 'tetrisHard') settingsTitle.innerText = '🔥 테트리스 (하드) 설정';
+            }
+
+            if (settingBBSeedItem) {
+                settingBBSeedItem.style.display = isBlockBlast ? 'flex' : 'none';
+            }
+            if (sensitivityWheelBox) {
+                sensitivityWheelBox.style.display = isTetris ? 'flex' : 'none';
+            }
+        }
+
+        function openSettings() {
+            if (!isGameRunning || isPaused || isDevModalOpen) return;
+            isPaused = true;
+            resetHoldKeys();
+            if (currentGame === 'blockBlast') bbState.draggingIndex = -1;
+            updateSettingsVisibilityForCurrentGame();
+            settingsOverlay.style.display = 'flex';
+        }
+
+        function closeSettings() {
+            if (!isPaused || isDevModalOpen) return;
+            isPaused = false;
+            settingsOverlay.style.display = 'none';
+            resumeCurrentGameLoop();
+        }
+
+        function resumeCurrentGameLoop() {
+            if (currentGame === 'blockBlast') {
+                gameLoopBlockBlast();
+            } else if (currentGame.startsWith('tetris')) {
+                tetrisState.lastDropTime = Date.now();
+                gameLoopTetris();
+            }
+        }
+
+        /* --- 개발자 코드 모달 제어 --- */
+        function openDevModal() {
+            if (isDevModalOpen) return;
+            isDevModalOpen = true;
+            wasRunningBeforeDev = isGameRunning && !isPaused;
+            if (wasRunningBeforeDev) {
+                isPaused = true;
+            }
+            resetHoldKeys();
+            if (currentGame === 'blockBlast') bbState.draggingIndex = -1;
+            devComboKeys.KeyD = false;
+            devComboKeys.KeyO = false;
+
+            devAuthSection.style.display = 'flex';
+            devScoreSection.style.display = 'none';
+            devCodeInput.value = '';
+            devErrorMsg.innerText = '';
+            devOverlay.style.display = 'flex';
+
+            setTimeout(() => devCodeInput.focus(), 30);
+        }
+
+        function verifyDevCode() {
+            const entered = devCodeInput.value.trim();
+            if (entered === DEV_SECRET_CODE) {
+                devErrorMsg.innerText = '';
+                devAuthSection.style.display = 'none';
+                devScoreSection.style.display = 'flex';
+
+                const currentScore = currentGame === 'blockBlast' ? bbState.score : tetrisState.score;
+                const gameNames = {
+                    blockBlast: '💥 블럭 블라스트 점수 조작',
+                    tetris: '🧩 일반 테트리스 점수 조작',
+                    tetrisHard: '🔥 테트리스 (하드) 점수 조작'
+                };
+                document.getElementById('devCurrentGameLabel').innerText = gameNames[currentGame];
+                devScoreInput.value = currentScore;
+                devNormalSpeedInput.value = normalTetrisSpeedMultiplier.toFixed(1);
+                devPerfectMsgInput.value = customPerfectText;
+                devMiniPerfectMsgInput.value = customMiniPerfectText;
+                setTimeout(() => devScoreInput.focus(), 30);
+            } else {
+                devErrorMsg.innerText = '❌ 개발자 코드가 일치하지 않습니다.';
+                devCodeInput.value = '';
+                devCodeInput.focus();
+            }
+        }
+
+        function addDevScore(amount) {
+            const currentVal = parseInt(devScoreInput.value, 10) || 0;
+            devScoreInput.value = currentVal + amount;
+        }
+
+        function setDevNormalSpeed(val) {
+            devNormalSpeedInput.value = val.toFixed(1);
+        }
+
+        function applyDevSettings() {
+            let newScore = parseInt(devScoreInput.value, 10);
+            if (isNaN(newScore) || newScore < 0) newScore = 0;
+
+            if (currentGame === 'blockBlast') {
+                bbState.score = newScore;
+                if (newScore > bbState.highScore) {
+                    bbState.highScore = newScore;
+                    const highElem = document.getElementById('highScore');
+                    if (highElem) highElem.innerText = bbState.highScore;
+                }
+                const scoreElem = document.getElementById('score');
+                if (scoreElem) scoreElem.innerText = bbState.score;
+                renderBlockBlast();
+            } else if (currentGame.startsWith('tetris')) {
+                tetrisState.score = newScore;
+                const scoreElem = document.getElementById('score');
+                if (scoreElem) scoreElem.innerText = tetrisState.score;
+            }
+
+            let newSpeed = parseFloat(devNormalSpeedInput.value);
+            if (!isNaN(newSpeed) && newSpeed > 0) {
+                normalTetrisSpeedMultiplier = Math.min(20, Math.max(0.1, newSpeed));
+            }
+
+            const newPerfectText = devPerfectMsgInput.value.trim();
+            const newMiniPerfectText = devMiniPerfectMsgInput.value.trim();
+            customPerfectText = newPerfectText !== "" ? newPerfectText : "PERFECT CLEAR! 3X";
+            customMiniPerfectText = newMiniPerfectText !== "" ? newMiniPerfectText : "MINI PERFECT! 2X";
+
+            if (currentGame.startsWith('tetris')) {
+                getDropInterval();
+                renderTetris();
+            }
+
+            closeDevModal();
+        }
+
+        function closeDevModal() {
+            if (!isDevModalOpen) return;
+            isDevModalOpen = false;
+            devOverlay.style.display = 'none';
+
+            if (wasRunningBeforeDev && settingsOverlay.style.display === 'none') {
+                isPaused = false;
+                resumeCurrentGameLoop();
+            }
+        }
+
+        function resetCurrentGame() {
+            if (isDevModalOpen) closeDevModal();
+            if (isPaused) closeSettings();
+            resetHoldKeys();
+            startGame();
+        }
+
+        window.addEventListener('keydown', e => {
+            if (isDevModalOpen) {
+                if (e.key === 'Escape' || e.key === 'Esc') {
+                    e.preventDefault();
+                    closeDevModal();
+                }
+                return;
+            }
+
+            if (document.activeElement.tagName !== 'INPUT') {
+                if (e.code === 'KeyD') devComboKeys.KeyD = true;
+                if (e.code === 'KeyO') devComboKeys.KeyO = true;
+
+                if (devComboKeys.KeyD && devComboKeys.KeyO) {
+                    e.preventDefault();
+                    openDevModal();
+                    return;
+                }
+            }
+
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                e.preventDefault();
+                if (isPaused) {
+                    closeSettings();
+                } else if (isGameRunning) {
+                    openSettings();
+                }
+                return;
+            }
+
+            if (isPaused) return;
+
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) {
+                e.preventDefault();
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                resetCurrentGame();
+                return;
+            }
+
+            if (e.code === 'Space') {
+                if (!keys.Space && isGameRunning && currentGame.startsWith('tetris')) {
+                    handleTetrisInput('Space');
+                }
+                keys.Space = true;
+            }
+            if (e.key === 'c' || e.key === 'C') {
+                if (!keys.KeyC && isGameRunning && currentGame.startsWith('tetris')) {
+                    holdTetris();
+                }
+                keys.KeyC = true;
+            }
+
+            if (keys.hasOwnProperty(e.key)) {
+                const isFirstPress = !keys[e.key];
+                keys[e.key] = true;
+
+                if (isGameRunning && currentGame.startsWith('tetris') && isFirstPress) {
+                    if (tetrisHoldState[e.key]) {
+                        const now = Date.now();
+                        tetrisHoldState[e.key].active = true;
+                        tetrisHoldState[e.key].startTime = now;
+                        tetrisHoldState[e.key].lastMoveTime = now;
+                    }
+                    handleTetrisInput(e.key);
+                }
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'KeyD') devComboKeys.KeyD = false;
+            if (e.code === 'KeyO') devComboKeys.KeyO = false;
+
+            if (e.code === 'Space') keys.Space = false;
+            if (e.key === 'c' || e.key === 'C') keys.KeyC = false;
+            if (keys.hasOwnProperty(e.key)) {
+                keys[e.key] = false;
+                if (tetrisHoldState[e.key]) {
+                    tetrisHoldState[e.key].active = false;
+                }
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            devComboKeys.KeyD = false;
+            devComboKeys.KeyO = false;
+            for (let k in keys) keys[k] = false;
+            resetHoldKeys();
+            if (currentGame === 'blockBlast') bbState.draggingIndex = -1;
+        });
+
+        function bindTouch(id, action) {
+            const btn = document.getElementById(id);
+            const start = (e) => {
+                e.preventDefault();
+                if (isPaused || isDevModalOpen) return;
+                if (action === 'Reset') {
+                    resetCurrentGame();
+                    return;
+                }
+                if (isGameRunning && currentGame.startsWith('tetris')) {
+                    if (action === 'KeyC') {
+                        holdTetris();
+                    } else {
+                        if (tetrisHoldState[action]) {
+                            const now = Date.now();
+                            tetrisHoldState[action].active = true;
+                            tetrisHoldState[action].startTime = now;
+                            tetrisHoldState[action].lastMoveTime = now;
+                        }
+                        handleTetrisInput(action);
+                    }
+                }
+                keys[action] = true;
+            };
+            const end = (e) => {
+                e.preventDefault();
+                if (action !== 'Reset') {
+                    keys[action] = false;
+                    if (tetrisHoldState[action]) {
+                        tetrisHoldState[action].active = false;
+                    }
+                }
+            };
+            btn.addEventListener('touchstart', start);
+            btn.addEventListener('touchend', end);
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', end);
+            btn.addEventListener('mouseleave', end);
+        }
+
+        bindTouch('btnUp', 'ArrowUp');
+        bindTouch('btnDown', 'ArrowDown');
+        bindTouch('btnLeft', 'ArrowLeft');
+        bindTouch('btnRight', 'ArrowRight');
+        bindTouch('btnHold', 'KeyC');
+        bindTouch('btnReset', 'Reset');
+
+        function switchGame(gameType, evt) {
+            if (isDevModalOpen) closeDevModal();
+            if (isPaused) closeSettings();
+            resetHoldKeys();
+            currentGame = gameType;
+            isGameRunning = false;
+            if (animationId) cancelAnimationFrame(animationId);
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if (evt) evt.target.classList.add('active');
+
+            const isTetris = gameType.startsWith('tetris');
+            nextPreviewBox.style.display = isTetris ? 'block' : 'none';
+            holdBox.style.display = isTetris ? 'block' : 'none';
+            touchControls.style.display = isTetris ? 'grid' : 'none';
+
+            initGameUI();
+            overlay.style.display = 'flex';
+            
+            if (gameType === 'blockBlast') {
+                overlayTitle.innerText = "💥 블럭 블라스트";
+                overlayText.innerHTML = "실제 모바일 <b>Block Blast!</b> 퍼즐 배정 알고리즘 탑재!<br>리필되는 3개 블록을 정확한 위치에 배치하면 반드시 줄이 클리어됩니다!";
+            } else if (gameType === 'tetris') {
+                overlayTitle.innerText = "🧩 일반 테트리스";
+                overlayText.innerHTML = "3줄 이상 삭제 시 MINI PERFECT 2배! 판 완벽 비우기 시 PERFECT 3배!<br>Hold(C), Hard Drop(Space), Reset(R)";
+            } else if (gameType === 'tetrisHard') {
+                overlayTitle.innerText = "🔥 테트리스 (하드 모드)";
+                overlayText.innerHTML = "1,000점당 속도가 0.2배 증가합니다! (최대 5배)<br>미니 퍼펙트(2배) & 퍼펙트(3배) 혜택 동일 적용!";
+            }
+            startBtn.innerText = "게임 시작";
+        }
+
+        function initGameUI() {
+            if (currentGame === 'blockBlast') {
+                statusBoard.innerHTML = `
+                    <div>점수: <span id="score">0</span></div>
+                    <div>콤보: <span id="bbComboDisplay" class="combo-badge">0 (○ ○ ○)</span></div>
+                    <div>최고: <span id="highScore">${bbState.highScore}</span></div>
+                `;
+                controlsInfo.innerHTML = `🖱️ <b>드래그</b> 배치 | 🔥 <b>3턴 내 줄 클리어</b> 시 콤보 유지 | <b>ESC</b>: 설정`;
+            } else if (currentGame === 'tetris') {
+                statusBoard.innerHTML = `<div>점수: <span id="score">0</span>점</div><div>줄: <span id="lines">0</span></div>`;
+                controlsInfo.innerHTML = `🎮 <b>방향키</b>(꾹 누르기 연속 이동/회전) | <b>Space</b>: 즉시낙하 | <b>ESC</b>: 설정`;
+            } else if (currentGame === 'tetrisHard') {
+                statusBoard.innerHTML = `<div>점수: <span id="score">0</span>점</div><div>줄: <span id="lines">0</span></div><div>속도: <span id="speedMultiplier">1.0</span>x</div>`;
+                controlsInfo.innerHTML = `🎮 <b>방향키</b>(꾹 누르기 연속 이동/회전) | <b>Space</b>: 즉시낙하 | <b>ESC</b>: 설정`;
+            }
+        }
+
+        function startGame() {
+            overlay.style.display = 'none';
+            isGameRunning = true;
+            isPaused = false;
+            resetHoldKeys();
+
+            if (currentGame === 'blockBlast') startBlockBlast();
+            else if (currentGame.startsWith('tetris')) startTetris();
+        }
+
+        function gameOver(msg, scoreInfo) {
+            isGameRunning = false;
+            isPaused = false;
+            resetHoldKeys();
+            playSfxGameOver();
+            if (animationId) cancelAnimationFrame(animationId);
+
+            overlayTitle.innerText = "💥 게임 오버!";
+            overlayText.innerHTML = `${msg}<br>${scoreInfo}`;
+            startBtn.innerText = "다시 도전하기";
+            overlay.style.display = 'flex';
+        }
+
+        function getRainbowGradient(context, width, height, speed = 0.003) {
+            const time = Date.now() * speed;
+            const rainbowGrad = context.createLinearGradient(0, 0, width, height);
+            rainbowGrad.addColorStop((0.0 + time) % 1, '#FF0000');
+            rainbowGrad.addColorStop((0.2 + time) % 1, '#FF7F00');
+            rainbowGrad.addColorStop((0.4 + time) % 1, '#FFFF00');
+            rainbowGrad.addColorStop((0.6 + time) % 1, '#00FF00');
+            rainbowGrad.addColorStop((0.8 + time) % 1, '#0000FF');
+            rainbowGrad.addColorStop((1.0 + time) % 1, '#8B00FF');
+            return rainbowGrad;
+        }
+
+        /* =========================================================
+           1. 블럭 블라스트 (모바일 Block Blast! 해법 보장 퍼즐 배정)
+           ========================================================= */
+        const BB_SIZE = 8;
+        const BB_CELL = 38;
+        const BB_BOARD_X = (360 - BB_SIZE * BB_CELL) / 2;
+        const BB_BOARD_Y = 22;
+        const BB_TRAY_Y = 345;
+        const BB_MINI_CELL = 16;
+
+        const BB_PIECE_DEFS = [
+            { shape: [[1]], weight: 1 },
+            { shape: [[1, 1]], weight: 3 },
+            { shape: [[1], [1]], weight: 3 },
+            { shape: [[1, 1, 1]], weight: 4 },
+            { shape: [[1], [1], [1]], weight: 4 },
+            { shape: [[1, 1, 1, 1]], weight: 3 },
+            { shape: [[1], [1], [1], [1]], weight: 3 },
+            { shape: [[1, 1, 1, 1, 1]], weight: 2 },
+            { shape: [[1], [1], [1], [1], [1]], weight: 2 },
+            { shape: [[1, 1], [1, 1]], weight: 4 },
+            { shape: [[1, 1, 1], [1, 1, 1], [1, 1, 1]], weight: 2 },
+            { shape: [[1, 1, 1], [1, 1, 1]], weight: 2 },
+            { shape: [[1, 1], [1, 1], [1, 1]], weight: 2 },
+            { shape: [[1, 0], [1, 1]], weight: 3 },
+            { shape: [[0, 1], [1, 1]], weight: 3 },
+            { shape: [[1, 1], [1, 0]], weight: 3 },
+            { shape: [[1, 1], [0, 1]], weight: 3 },
+            { shape: [[1, 0, 0], [1, 0, 0], [1, 1, 1]], weight: 2 },
+            { shape: [[0, 0, 1], [0, 0, 1], [1, 1, 1]], weight: 2 },
+            { shape: [[1, 1, 1], [1, 0, 0], [1, 0, 0]], weight: 2 },
+            { shape: [[1, 1, 1], [0, 0, 1], [0, 0, 1]], weight: 2 },
+            { shape: [[1, 0], [1, 0], [1, 1]], weight: 2 },
+            { shape: [[0, 1], [0, 1], [1, 1]], weight: 2 },
+            { shape: [[1, 1], [1, 0], [1, 0]], weight: 2 },
+            { shape: [[1, 1], [0, 1], [0, 1]], weight: 2 },
+            { shape: [[1, 1, 1], [1, 0, 0]], weight: 2 },
+            { shape: [[1, 1, 1], [0, 0, 1]], weight: 2 },
+            { shape: [[1, 0, 0], [1, 1, 1]], weight: 2 },
+            { shape: [[0, 0, 1], [1, 1, 1]], weight: 2 },
+            { shape: [[1, 1, 1], [0, 1, 0]], weight: 2 },
+            { shape: [[0, 1, 0], [1, 1, 1]], weight: 2 },
+            { shape: [[1, 0], [1, 1], [1, 0]], weight: 2 },
+            { shape: [[0, 1], [1, 1], [0, 1]], weight: 2 },
+            { shape: [[0, 1, 1], [1, 1, 0]], weight: 2 },
+            { shape: [[1, 1, 0], [0, 1, 1]], weight: 2 },
+            { shape: [[1, 0], [1, 1], [0, 1]], weight: 2 },
+            { shape: [[0, 1], [1, 1], [1, 0]], weight: 2 }
+        ];
+
+        const BB_COLORS = [
+            '#38BDF8', // 스카이 블루
+            '#F43F5E', // 루비 레드
+            '#10B981', // 에메랄드 그린
+            '#F59E0B', // 앰버 오렌지
+            '#A855F7', // 아메시스트 퍼플
+            '#EC4899', // 핑크
+            '#EAB308'  // 골드 옐로우
+        ];
+
+        const bbState = {
+            board: [],
+            tray: [null, null, null],
+            trayPlayable: [true, true, true],
+            isGameOverPending: false,
+            score: 0,
+            highScore: 0,
+            combo: 0,
+            comboGrace: 0,
+            shakeTimer: 0,
+            shakeIntensity: 0,
+            lineFlashes: [],
+            poppingCells: [],
+            floatingTexts: [],
+            praiseBanner: null,
+            draggingIndex: -1,
+            pointerX: 0,
+            pointerY: 0,
+            previewPos: null,
+            previewClearRows: [],
+            previewClearCols: []
+        };
+
+        // 38~42칸이 비대칭 실전 퍼즐 형태로 채워진 초기 보드 생성
+        function generateInitialBBBoard() {
+            const board = Array.from({ length: BB_SIZE }, () => Array(BB_SIZE).fill(null));
+            if (!useBBSeedBoard) return board;
+
+            const c1 = BB_COLORS[Math.floor(Math.random() * BB_COLORS.length)];
+            const c2 = BB_COLORS[(BB_COLORS.indexOf(c1) + 2) % BB_COLORS.length];
+            const c3 = BB_COLORS[(BB_COLORS.indexOf(c1) + 4) % BB_COLORS.length];
+            const c4 = BB_COLORS[(BB_COLORS.indexOf(c1) + 5) % BB_COLORS.length];
+
+            const seedPatterns = [
+                // 패턴 A (40칸)
+                [
+                    { r: 0, c: 0, color: c1 }, { r: 0, c: 1, color: c1 }, { r: 0, c: 2, color: c1 }, { r: 0, c: 6, color: c2 },
+                    { r: 1, c: 0, color: c1 }, { r: 1, c: 1, color: c1 }, { r: 1, c: 5, color: c2 }, { r: 1, c: 6, color: c2 },
+                    { r: 2, c: 0, color: c3 }, { r: 2, c: 5, color: c2 }, { r: 2, c: 6, color: c2 }, { r: 2, c: 7, color: c4 },
+                    { r: 3, c: 0, color: c3 }, { r: 3, c: 1, color: c3 }, { r: 3, c: 6, color: c4 }, { r: 3, c: 7, color: c4 },
+                    { r: 4, c: 0, color: c2 }, { r: 4, c: 1, color: c2 }, { r: 4, c: 2, color: c2 }, { r: 4, c: 6, color: c4 }, { r: 4, c: 7, color: c4 },
+                    { r: 5, c: 0, color: c4 }, { r: 5, c: 1, color: c4 }, { r: 5, c: 2, color: c4 }, { r: 5, c: 3, color: c4 }, { r: 5, c: 7, color: c1 },
+                    { r: 6, c: 0, color: c1 }, { r: 6, c: 1, color: c1 }, { r: 6, c: 2, color: c1 }, { r: 6, c: 3, color: c1 }, { r: 6, c: 6, color: c3 }, { r: 6, c: 7, color: c3 },
+                    { r: 7, c: 0, color: c2 }, { r: 7, c: 1, color: c2 }, { r: 7, c: 2, color: c2 }, { r: 7, c: 3, color: c2 }, { r: 7, c: 5, color: c3 }, { r: 7, c: 6, color: c3 }, { r: 7, c: 7, color: c3 }
+                ],
+                // 패턴 B (41칸)
+                [
+                    { r: 0, c: 1, color: c2 }, { r: 0, c: 2, color: c2 }, { r: 0, c: 3, color: c2 }, { r: 0, c: 4, color: c2 }, { r: 0, c: 7, color: c1 },
+                    { r: 1, c: 0, color: c3 }, { r: 1, c: 1, color: c3 }, { r: 1, c: 3, color: c2 }, { r: 1, c: 6, color: c1 }, { r: 1, c: 7, color: c1 },
+                    { r: 2, c: 0, color: c3 }, { r: 2, c: 1, color: c3 }, { r: 2, c: 2, color: c3 }, { r: 2, c: 6, color: c1 }, { r: 2, c: 7, color: c1 },
+                    { r: 3, c: 0, color: c4 }, { r: 3, c: 1, color: c4 }, { r: 3, c: 4, color: c4 }, { r: 3, c: 5, color: c4 }, { r: 3, c: 7, color: c2 },
+                    { r: 4, c: 0, color: c4 }, { r: 4, c: 4, color: c4 }, { r: 4, c: 5, color: c4 }, { r: 4, c: 6, color: c2 }, { r: 4, c: 7, color: c2 },
+                    { r: 5, c: 0, color: c1 }, { r: 5, c: 1, color: c1 }, { r: 5, c: 5, color: c3 }, { r: 5, c: 6, color: c3 }, { r: 5, c: 7, color: c3 },
+                    { r: 6, c: 0, color: c1 }, { r: 6, c: 1, color: c1 }, { r: 6, c: 2, color: c1 }, { r: 6, c: 4, color: c3 }, { r: 6, c: 5, color: c3 }, { r: 6, c: 7, color: c3 },
+                    { r: 7, c: 0, color: c2 }, { r: 7, c: 1, color: c2 }, { r: 7, c: 2, color: c2 }, { r: 7, c: 4, color: c1 }, { r: 7, c: 5, color: c1 }
+                ],
+                // 패턴 C (39칸)
+                [
+                    { r: 0, c: 0, color: c1 }, { r: 0, c: 1, color: c1 }, { r: 0, c: 2, color: c1 }, { r: 0, c: 3, color: c1 }, { r: 0, c: 4, color: c1 }, { r: 0, c: 7, color: c3 },
+                    { r: 1, c: 0, color: c1 }, { r: 1, c: 1, color: c1 }, { r: 1, c: 2, color: c1 }, { r: 1, c: 6, color: c3 }, { r: 1, c: 7, color: c3 },
+                    { r: 2, c: 0, color: c2 }, { r: 2, c: 1, color: c2 }, { r: 2, c: 6, color: c3 }, { r: 2, c: 7, color: c3 },
+                    { r: 3, c: 0, color: c2 }, { r: 3, c: 4, color: c4 }, { r: 3, c: 5, color: c4 }, { r: 3, c: 7, color: c1 },
+                    { r: 4, c: 0, color: c4 }, { r: 4, c: 1, color: c4 }, { r: 4, c: 4, color: c4 }, { r: 4, c: 7, color: c1 },
+                    { r: 5, c: 0, color: c4 }, { r: 5, c: 1, color: c4 }, { r: 5, c: 2, color: c4 }, { r: 5, c: 6, color: c2 }, { r: 5, c: 7, color: c2 },
+                    { r: 6, c: 1, color: c3 }, { r: 6, c: 2, color: c3 }, { r: 6, c: 3, color: c3 }, { r: 6, c: 5, color: c2 }, { r: 6, c: 6, color: c2 }, { r: 6, c: 7, color: c2 },
+                    { r: 7, c: 2, color: c3 }, { r: 7, c: 3, color: c3 }, { r: 7, c: 4, color: c3 }, { r: 7, c: 5, color: c3 }, { r: 7, c: 6, color: c3 }
+                ]
+            ];
+
+            const chosen = seedPatterns[Math.floor(Math.random() * seedPatterns.length)];
+            chosen.forEach(cell => {
+                board[cell.r][cell.c] = cell.color;
+            });
+
+            return board;
+        }
+
+        function updateBBComboUI() {
+            const comboElem = document.getElementById('bbComboDisplay');
+            if (!comboElem) return;
+            if (bbState.combo > 0) {
+                const dots = '● '.repeat(bbState.comboGrace) + '○ '.repeat(3 - bbState.comboGrace);
+                comboElem.innerText = `🔥${bbState.combo} (${dots.trim()})`;
+            } else {
+                comboElem.innerText = `0 (○ ○ ○)`;
+            }
+        }
+
+        function pickWeightedBBShape() {
+            const totalWeight = BB_PIECE_DEFS.reduce((acc, item) => acc + item.weight, 0);
+            let rand = Math.random() * totalWeight;
+            for (const item of BB_PIECE_DEFS) {
+                if (rand < item.weight) return item.shape;
+                rand -= item.weight;
+            }
+            return BB_PIECE_DEFS[0].shape;
+        }
+
+        function createRandomBBPiece() {
+            const shape = pickWeightedBBShape();
+            const color = BB_COLORS[Math.floor(Math.random() * BB_COLORS.length)];
+            return { shape, color };
+        }
+
+        function canPlaceOnBoard(boardGrid, shape, boardR, boardC) {
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c]) {
+                        const nr = boardR + r;
+                        const nc = boardC + c;
+                        if (nr < 0 || nr >= BB_SIZE || nc < 0 || nc >= BB_SIZE) return false;
+                        if (boardGrid[nr][nc] !== null) return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function canPieceFitAnywhere(boardGrid, piece) {
+            if (!piece) return false;
+            for (let r = 0; r < BB_SIZE; r++) {
+                for (let c = 0; c < BB_SIZE; c++) {
+                    if (canPlaceOnBoard(boardGrid, piece.shape, r, c)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function simulateStep(boardGrid, shape, targetR, targetC, color) {
+            const nextBoard = boardGrid.map(row => [...row]);
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c]) nextBoard[targetR + r][targetC + c] = color;
+                }
+            }
+            const fullRows = [];
+            const fullCols = [];
+            for (let r = 0; r < BB_SIZE; r++) {
+                if (nextBoard[r].every(cell => cell !== null)) fullRows.push(r);
+            }
+            for (let c = 0; c < BB_SIZE; c++) {
+                let full = true;
+                for (let r = 0; r < BB_SIZE; r++) {
+                    if (nextBoard[r][c] === null) { full = false; break; }
+                }
+                if (full) fullCols.push(c);
+            }
+            fullRows.forEach(r => {
+                for (let c = 0; c < BB_SIZE; c++) nextBoard[r][c] = null;
+            });
+            fullCols.forEach(c => {
+                for (let r = 0; r < BB_SIZE; r++) nextBoard[r][c] = null;
+            });
+            return { nextBoard, clearedLines: fullRows.length + fullCols.length };
+        }
+
+        function evaluateTraySolution(boardGrid, pieces, clearedSoFar = 0) {
+            if (pieces.length === 0) {
+                return clearedSoFar > 0 ? 2 : 1;
+            }
+
+            let bestResult = 0;
+            for (let i = 0; i < pieces.length; i++) {
+                const p = pieces[i];
+                const remaining = pieces.filter((_, idx) => idx !== i);
+
+                const moves = [];
+                for (let r = 0; r < BB_SIZE; r++) {
+                    for (let c = 0; c < BB_SIZE; c++) {
+                        if (canPlaceOnBoard(boardGrid, p.shape, r, c)) {
+                            const sim = simulateStep(boardGrid, p.shape, r, c, p.color);
+                            moves.push(sim);
+                        }
+                    }
+                }
+                moves.sort((a, b) => b.clearedLines - a.clearedLines);
+
+                for (const sim of moves) {
+                    const res = evaluateTraySolution(sim.nextBoard, remaining, clearedSoFar + sim.clearedLines);
+                    if (res === 2) return 2;
+                    if (res > bestResult) bestResult = res;
+                }
+            }
+            return bestResult;
+        }
+
+        function craftGuaranteedFittingPiece(boardGrid) {
+            const candidates = [];
+            for (let r = 0; r < BB_SIZE; r++) {
+                const emptyCols = [];
+                for (let c = 0; c < BB_SIZE; c++) {
+                    if (boardGrid[r][c] === null) emptyCols.push(c);
+                }
+                if (emptyCols.length >= 1 && emptyCols.length <= 4) {
+                    const minC = Math.min(...emptyCols);
+                    const maxC = Math.max(...emptyCols);
+                    if (maxC - minC + 1 === emptyCols.length) {
+                        const rowShape = [Array(emptyCols.length).fill(1)];
+                        candidates.push(rowShape);
+                    }
+                }
+            }
+            for (let c = 0; c < BB_SIZE; c++) {
+                const emptyRows = [];
+                for (let r = 0; r < BB_SIZE; r++) {
+                    if (boardGrid[r][c] === null) emptyRows.push(r);
+                }
+                if (emptyRows.length >= 1 && emptyRows.length <= 4) {
+                    const minR = Math.min(...emptyRows);
+                    const maxR = Math.max(...emptyRows);
+                    if (maxR - minR + 1 === emptyRows.length) {
+                        const colShape = Array.from({ length: emptyRows.length }, () => [1]);
+                        candidates.push(colShape);
+                    }
+                }
+            }
+
+            if (candidates.length > 0) {
+                const chosenShape = candidates[Math.floor(Math.random() * candidates.length)];
+                const color = BB_COLORS[Math.floor(Math.random() * BB_COLORS.length)];
+                return { shape: chosenShape, color };
+            }
+            return createRandomBBPiece();
+        }
+
+        function refillBBTray() {
+            let fallbackSolvable = null;
+
+            for (let attempt = 0; attempt < 40; attempt++) {
+                const candidate = [
+                    createRandomBBPiece(),
+                    createRandomBBPiece(),
+                    createRandomBBPiece()
+                ];
+                const score = evaluateTraySolution(bbState.board, candidate, 0);
+                if (score === 2) {
+                    bbState.tray = candidate;
+                    return;
+                }
+                if (score === 1 && !fallbackSolvable) {
+                    fallbackSolvable = candidate;
+                }
+            }
+
+            for (let attempt = 0; attempt < 30; attempt++) {
+                const candidate = [
+                    craftGuaranteedFittingPiece(bbState.board),
+                    createRandomBBPiece(),
+                    createRandomBBPiece()
+                ];
+                candidate.sort(() => Math.random() - 0.5);
+                const score = evaluateTraySolution(bbState.board, candidate, 0);
+                if (score === 2) {
+                    bbState.tray = candidate;
+                    return;
+                }
+                if (score === 1 && !fallbackSolvable) {
+                    fallbackSolvable = candidate;
+                }
+            }
+
+            if (fallbackSolvable) {
+                bbState.tray = fallbackSolvable;
+                return;
+            }
+
+            bbState.tray = [
+                createRandomBBPiece(),
+                createRandomBBPiece(),
+                createRandomBBPiece()
+            ];
+        }
+
+        function updateTrayPlayabilityAndCheckGameOver() {
+            let anyCanMove = false;
+            for (let i = 0; i < 3; i++) {
+                const piece = bbState.tray[i];
+                if (!piece) {
+                    bbState.trayPlayable[i] = false;
+                    continue;
+                }
+                const fit = canPieceFitAnywhere(bbState.board, piece);
+                bbState.trayPlayable[i] = fit;
+                if (fit) anyCanMove = true;
+            }
+
+            if (!anyCanMove && !bbState.isGameOverPending) {
+                bbState.isGameOverPending = true;
+                bbState.draggingIndex = -1;
+                bbState.previewPos = null;
+                bbState.previewClearRows = [];
+                bbState.previewClearCols = [];
+
+                addBBFloatingText(canvas.width / 2, BB_BOARD_Y + (BB_SIZE * BB_CELL) / 2, 'NO MORE MOVES!', '#F43F5E', 24);
+                renderBlockBlast();
+
+                setTimeout(() => {
+                    if (isGameRunning && currentGame === 'blockBlast' && bbState.isGameOverPending) {
+                        gameOver("더 이상 블록을 놓을 공간이 없습니다!", `최종 점수: <b>${bbState.score}점</b>`);
+                    }
+                }, 650);
+            }
+        }
+
+        function startBlockBlast() {
+            bbState.board = generateInitialBBBoard();
+            bbState.score = 0;
+            bbState.combo = 0;
+            bbState.comboGrace = 0;
+            bbState.isGameOverPending = false;
+            bbState.shakeTimer = 0;
+            bbState.shakeIntensity = 0;
+            bbState.lineFlashes = [];
+            bbState.poppingCells = [];
+            bbState.floatingTexts = [];
+            bbState.praiseBanner = null;
+            bbState.draggingIndex = -1;
+            bbState.previewPos = null;
+            bbState.previewClearRows = [];
+            bbState.previewClearCols = [];
+            particles = [];
+            lockFlashes = [];
+            perfectFlashTimer = 0;
+
+            refillBBTray();
+            document.getElementById('score').innerText = 0;
+            document.getElementById('highScore').innerText = bbState.highScore;
+            updateBBComboUI();
+            updateTrayPlayabilityAndCheckGameOver();
+
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoopBlockBlast();
+        }
+
+        function canPlaceBBPiece(piece, boardR, boardC) {
+            if (!piece) return false;
+            return canPlaceOnBoard(bbState.board, piece.shape, boardR, boardC);
+        }
+
+        function updateBBDragPreview() {
+            bbState.previewPos = null;
+            bbState.previewClearRows = [];
+            bbState.previewClearCols = [];
+
+            if (bbState.draggingIndex === -1) return;
+            const piece = bbState.tray[bbState.draggingIndex];
+            if (!piece) return;
+
+            const shape = piece.shape;
+            const pieceW = shape[0].length * BB_CELL;
+            const pieceH = shape.length * BB_CELL;
+
+            const topLeftX = bbState.pointerX - pieceW / 2;
+            const topLeftY = bbState.pointerY - pieceH - 28;
+
+            const targetC = Math.round((topLeftX - BB_BOARD_X) / BB_CELL);
+            const targetR = Math.round((topLeftY - BB_BOARD_Y) / BB_CELL);
+
+            if (canPlaceBBPiece(piece, targetR, targetC)) {
+                bbState.previewPos = { r: targetR, c: targetC };
+
+                const tempBoard = bbState.board.map(row => [...row]);
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            tempBoard[targetR + r][targetC + c] = piece.color;
+                        }
+                    }
+                }
+
+                for (let r = 0; r < BB_SIZE; r++) {
+                    if (tempBoard[r].every(cell => cell !== null)) bbState.previewClearRows.push(r);
+                }
+                for (let c = 0; c < BB_SIZE; c++) {
+                    let full = true;
+                    for (let r = 0; r < BB_SIZE; r++) {
+                        if (tempBoard[r][c] === null) { full = false; break; }
+                    }
+                    if (full) bbState.previewClearCols.push(c);
+                }
+            }
+        }
+
+        function createBBShatterEffect(row, col, color, delayFrames = 0) {
+            const cx = BB_BOARD_X + col * BB_CELL + BB_CELL / 2;
+            const cy = BB_BOARD_Y + row * BB_CELL + BB_CELL / 2;
+
+            bbState.poppingCells.push({
+                r: row,
+                c: col,
+                color: color,
+                delay: delayFrames,
+                progress: 0
+            });
+
+            for (let i = 0; i < 10; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6.5 + 2.5;
+                particles.push({
+                    x: cx + (Math.random() - 0.5) * 12,
+                    y: cy + (Math.random() - 0.5) * 12,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2.2,
+                    size: Math.random() * 6.5 + 3.5,
+                    color: i % 3 === 0 ? '#FFFFFF' : color,
+                    alpha: 1.0,
+                    rotation: Math.random() * Math.PI * 2,
+                    vRot: (Math.random() - 0.5) * 0.4,
+                    gravity: 0.3,
+                    isPerfect: false
+                });
+            }
+        }
+
+        function addBBFloatingText(x, y, text, color = '#FACC15', fontSize = 22) {
+            bbState.floatingTexts.push({
+                x,
+                y,
+                text,
+                color,
+                fontSize,
+                alpha: 1.0,
+                vy: -1.6,
+                scale: 0.55
+            });
+        }
+
+        function triggerBBPraiseBanner(totalLines, combo) {
+            let text = '';
+            let color = '#38BDF8';
+            if (totalLines >= 4 || combo >= 6) {
+                text = 'UNBELIEVABLE!';
+                color = '#F43F5E';
+            } else if (totalLines === 3 || combo >= 4) {
+                text = 'AMAZING!';
+                color = '#A855F7';
+            } else if (totalLines === 2 || combo >= 2) {
+                text = 'GREAT!';
+                color = '#FACC15';
+            } else {
+                text = 'GOOD!';
+                color = '#38BDF8';
+            }
+
+            bbState.praiseBanner = {
+                text,
+                color,
+                alpha: 1.0,
+                scale: 0.5,
+                timer: 42
+            };
+        }
+
+        function placeBBPiece(trayIndex, targetR, targetC) {
+            if (bbState.isGameOverPending) return;
+            const piece = bbState.tray[trayIndex];
+            if (!piece || !canPlaceBBPiece(piece, targetR, targetC)) return;
+
+            const shape = piece.shape;
+            let placedBlocks = 0;
+
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c]) {
+                        const br = targetR + r;
+                        const bc = targetC + c;
+                        bbState.board[br][bc] = piece.color;
+                        placedBlocks++;
+
+                        if (useLockEffect) {
+                            lockFlashes.push({
+                                isBB: true,
+                                gridX: bc,
+                                gridY: br,
+                                alpha: 0.85,
+                                expand: 0
+                            });
+                        }
+                    }
+                }
+            }
+
+            bbState.tray[trayIndex] = null;
+
+            const rowsToClear = [];
+            const colsToClear = [];
+
+            for (let r = 0; r < BB_SIZE; r++) {
+                if (bbState.board[r].every(cell => cell !== null)) rowsToClear.push(r);
+            }
+            for (let c = 0; c < BB_SIZE; c++) {
+                let full = true;
+                for (let r = 0; r < BB_SIZE; r++) {
+                    if (bbState.board[r][c] === null) { full = false; break; }
+                }
+                if (full) colsToClear.push(c);
+            }
+
+            const totalLines = rowsToClear.length + colsToClear.length;
+            let gainedScore = placedBlocks * 10;
+
+            const centerX = BB_BOARD_X + (targetC + shape[0].length / 2) * BB_CELL;
+            const centerY = BB_BOARD_Y + (targetR + shape.length / 2) * BB_CELL;
+
+            if (totalLines > 0) {
+                bbState.combo++;
+                bbState.comboGrace = 3;
+
+                playSfxClear(bbState.combo, totalLines);
+                triggerBBPraiseBanner(totalLines, bbState.combo);
+
+                bbState.shakeTimer = Math.min(22, 10 + totalLines * 4);
+                bbState.shakeIntensity = Math.min(11, 4 + totalLines * 2.5);
+
+                rowsToClear.forEach(r => {
+                    bbState.lineFlashes.push({
+                        type: 'row',
+                        index: r,
+                        alpha: 1.0,
+                        thickness: BB_CELL
+                    });
+                });
+                colsToClear.forEach(c => {
+                    bbState.lineFlashes.push({
+                        type: 'col',
+                        index: c,
+                        alpha: 1.0,
+                        thickness: BB_CELL
+                    });
+                });
+
+                const clearedCells = new Set();
+                rowsToClear.forEach(r => {
+                    for (let c = 0; c < BB_SIZE; c++) clearedCells.add(`${r},${c}`);
+                });
+                colsToClear.forEach(c => {
+                    for (let r = 0; r < BB_SIZE; r++) clearedCells.add(`${r},${c}`);
+                });
+
+                const originR = targetR + shape.length / 2;
+                const originC = targetC + shape[0].length / 2;
+
+                clearedCells.forEach(key => {
+                    const [r, c] = key.split(',').map(Number);
+                    const cellColor = useRainbowEffect ? '#FACC15' : bbState.board[r][c];
+                    const dist = Math.hypot(r - originR, c - originC);
+                    const delay = Math.round(dist * 1.4);
+                    createBBShatterEffect(r, c, cellColor, delay);
+                    bbState.board[r][c] = null;
+                });
+
+                let lineScore = totalLines * 100 + (totalLines > 1 ? (totalLines - 1) * 100 : 0);
+                if (bbState.combo > 1) {
+                    lineScore += (bbState.combo - 1) * 60;
+                }
+
+                // 블럭 블라스트는 판 전체를 완벽히 비웠을 때만 PERFECT CLEAR 발동
+                const isBoardEmpty = bbState.board.every(row => row.every(cell => cell === null));
+                if (isBoardEmpty) {
+                    lineScore *= 3;
+                    triggerPerfectEffect(customPerfectText, 40, 220);
+                }
+
+                gainedScore += lineScore;
+
+                addBBFloatingText(centerX, centerY, `+${gainedScore}`, '#FACC15', 25);
+                if (bbState.combo >= 2) {
+                    addBBFloatingText(centerX, centerY - 30, `🔥 COMBO ${bbState.combo}!`, '#FB923C', 22);
+                }
+            } else {
+                playSfxPlace();
+                if (bbState.combo > 0) {
+                    bbState.comboGrace--;
+                    if (bbState.comboGrace <= 0) {
+                        bbState.combo = 0;
+                        bbState.comboGrace = 0;
+                    }
+                }
+            }
+
+            bbState.score += gainedScore;
+            if (bbState.score > bbState.highScore) {
+                bbState.highScore = bbState.score;
+            }
+            document.getElementById('score').innerText = bbState.score;
+            document.getElementById('highScore').innerText = bbState.highScore;
+            updateBBComboUI();
+
+            if (bbState.tray.every(item => item === null)) {
+                refillBBTray();
+            }
+
+            updateTrayPlayabilityAndCheckGameOver();
+        }
+
+        function getCanvasPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function onBBPointerDown(e) {
+            if (!isGameRunning || currentGame !== 'blockBlast' || isPaused || isDevModalOpen || bbState.isGameOverPending) return;
+            const pos = getCanvasPointerPos(e);
+            bbState.pointerX = pos.x;
+            bbState.pointerY = pos.y;
+
+            if (pos.y >= BB_TRAY_Y - 15) {
+                const slotWidth = canvas.width / 3;
+                const slotIdx = Math.floor(pos.x / slotWidth);
+                if (slotIdx >= 0 && slotIdx < 3 && bbState.tray[slotIdx] !== null) {
+                    bbState.draggingIndex = slotIdx;
+                    playSfxPickup();
+                    updateBBDragPreview();
+                }
+            }
+        }
+
+        function onBBPointerMove(e) {
+            if (!isGameRunning || currentGame !== 'blockBlast' || bbState.draggingIndex === -1 || bbState.isGameOverPending) return;
+            e.preventDefault();
+            const pos = getCanvasPointerPos(e);
+            bbState.pointerX = pos.x;
+            bbState.pointerY = pos.y;
+            updateBBDragPreview();
+        }
+
+        function onBBPointerUp() {
+            if (currentGame !== 'blockBlast' || bbState.draggingIndex === -1) return;
+            if (bbState.previewPos && !bbState.isGameOverPending) {
+                placeBBPiece(bbState.draggingIndex, bbState.previewPos.r, bbState.previewPos.c);
+            }
+            bbState.draggingIndex = -1;
+            bbState.previewPos = null;
+            bbState.previewClearRows = [];
+            bbState.previewClearCols = [];
+        }
+
+        canvas.addEventListener('mousedown', onBBPointerDown);
+        window.addEventListener('mousemove', onBBPointerMove);
+        window.addEventListener('mouseup', onBBPointerUp);
+
+        canvas.addEventListener('touchstart', onBBPointerDown, { passive: false });
+        window.addEventListener('touchmove', onBBPointerMove, { passive: false });
+        window.addEventListener('touchend', onBBPointerUp);
+
+        function gameLoopBlockBlast() {
+            if (!isGameRunning || currentGame !== 'blockBlast' || isPaused) return;
+            renderBlockBlast();
+            if (!isPaused) {
+                animationId = requestAnimationFrame(gameLoopBlockBlast);
+            }
+        }
+
+        function drawRoundedBlock(context, x, y, size, color, alpha = 1.0) {
+            context.save();
+            context.globalAlpha = alpha;
+
+            const pad = 1.5;
+            const bx = x + pad;
+            const by = y + pad;
+            const bSize = size - pad * 2;
+            const radius = Math.max(4, size * 0.16);
+
+            context.fillStyle = color;
+            context.beginPath();
+            context.roundRect(bx, by, bSize, bSize, radius);
+            context.fill();
+
+            context.fillStyle = 'rgba(255, 255, 255, 0.32)';
+            context.beginPath();
+            context.roundRect(bx + 1.5, by + 1.5, bSize - 3, bSize * 0.36, radius * 0.7);
+            context.fill();
+
+            context.fillStyle = 'rgba(0, 0, 0, 0.22)';
+            context.beginPath();
+            context.roundRect(bx + 1, by + bSize * 0.74, bSize - 2, bSize * 0.24, radius * 0.6);
+            context.fill();
+
+            context.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+            context.lineWidth = 1;
+            context.beginPath();
+            context.roundRect(bx + 0.5, by + 0.5, bSize - 1, bSize - 1, radius);
+            context.stroke();
+
+            context.restore();
+        }
+
+        function updateAndDrawBBPoppingCells() {
+            for (let i = bbState.poppingCells.length - 1; i >= 0; i--) {
+                const pc = bbState.poppingCells[i];
+                if (pc.delay > 0) {
+                    pc.delay--;
+                    const x = BB_BOARD_X + pc.c * BB_CELL;
+                    const y = BB_BOARD_Y + pc.r * BB_CELL;
+                    drawRoundedBlock(ctx, x, y, BB_CELL, '#FFFFFF', 0.9);
+                    continue;
+                }
+
+                pc.progress += 0.14;
+                if (pc.progress >= 1) {
+                    bbState.poppingCells.splice(i, 1);
+                    continue;
+                }
+
+                const scale = pc.progress < 0.35
+                    ? 1 + (pc.progress / 0.35) * 0.25
+                    : 1.25 * (1 - (pc.progress - 0.35) / 0.65);
+                const alpha = 1 - pc.progress;
+
+                const cx = BB_BOARD_X + pc.c * BB_CELL + BB_CELL / 2;
+                const cy = BB_BOARD_Y + pc.r * BB_CELL + BB_CELL / 2;
+
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(scale, scale);
+                drawRoundedBlock(ctx, -BB_CELL / 2, -BB_CELL / 2, BB_CELL, pc.color, alpha);
+                ctx.restore();
+            }
+        }
+
+        function updateAndDrawBBLineFlashes() {
+            for (let i = bbState.lineFlashes.length - 1; i >= 0; i--) {
+                const lf = bbState.lineFlashes[i];
+                lf.alpha -= 0.06;
+                lf.thickness *= 0.92;
+
+                if (lf.alpha <= 0) {
+                    bbState.lineFlashes.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, lf.alpha);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = '#38BDF8';
+
+                if (lf.type === 'row') {
+                    const cy = BB_BOARD_Y + lf.index * BB_CELL + BB_CELL / 2;
+                    ctx.fillRect(BB_BOARD_X, cy - lf.thickness / 2, BB_SIZE * BB_CELL, lf.thickness);
+                } else {
+                    const cx = BB_BOARD_X + lf.index * BB_CELL + BB_CELL / 2;
+                    ctx.fillRect(cx - lf.thickness / 2, BB_BOARD_Y, lf.thickness, BB_SIZE * BB_CELL);
+                }
+                ctx.restore();
+            }
+        }
+
+        function updateAndDrawBBFloatingTexts() {
+            for (let i = bbState.floatingTexts.length - 1; i >= 0; i--) {
+                const ft = bbState.floatingTexts[i];
+                ft.y += ft.vy;
+                ft.alpha -= 0.02;
+                if (ft.scale < 1.15) ft.scale += 0.08;
+
+                if (ft.alpha <= 0) {
+                    bbState.floatingTexts.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.translate(ft.x, ft.y);
+                ctx.scale(ft.scale, ft.scale);
+                ctx.font = `900 ${ft.fontSize}px 'Apple SD Gothic Neo', sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.95)';
+                ctx.strokeText(ft.text, 0, 0);
+
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, 0, 0);
+                ctx.restore();
+            }
+        }
+
+        function updateAndDrawBBPraiseBanner() {
+            const pb = bbState.praiseBanner;
+            if (!pb) return;
+
+            pb.timer--;
+            if (pb.timer <= 0) {
+                bbState.praiseBanner = null;
+                return;
+            }
+
+            if (pb.scale < 1.1) pb.scale += 0.12;
+            if (pb.timer < 12) pb.alpha = pb.timer / 12;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, pb.alpha);
+            ctx.translate(canvas.width / 2, BB_BOARD_Y + (BB_SIZE * BB_CELL) / 2 - 42);
+            ctx.scale(pb.scale, pb.scale);
+            ctx.font = `900 28px 'Apple SD Gothic Neo', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.shadowBlur = 16;
+            ctx.shadowColor = pb.color;
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#0F172A';
+            ctx.strokeText(pb.text, 0, 0);
+
+            ctx.fillStyle = pb.color;
+            ctx.fillText(pb.text, 0, 0);
+            ctx.restore();
+        }
+
+        function renderBlockBlast() {
+            ctx.save();
+
+            if (bbState.shakeTimer > 0) {
+                bbState.shakeTimer--;
+                const dx = (Math.random() - 0.5) * bbState.shakeIntensity * 2;
+                const dy = (Math.random() - 0.5) * bbState.shakeIntensity * 2;
+                ctx.translate(dx, dy);
+                bbState.shakeIntensity *= 0.9;
+            }
+
+            ctx.clearRect(-20, -20, canvas.width + 40, canvas.height + 40);
+
+            if (perfectFlashTimer > 0) {
+                perfectFlashTimer--;
+                ctx.save();
+                ctx.globalAlpha = Math.min(1.0, perfectFlashTimer / 15);
+                ctx.fillStyle = getRainbowGradient(ctx, canvas.width, canvas.height, 0.025);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            } else if (useRainbowEffect) {
+                ctx.save();
+                ctx.globalAlpha = 0.22;
+                ctx.fillStyle = getRainbowGradient(ctx, canvas.width, canvas.height, 0.0008);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            ctx.beginPath();
+            ctx.roundRect(BB_BOARD_X - 4, BB_BOARD_Y - 4, BB_SIZE * BB_CELL + 8, BB_SIZE * BB_CELL + 8, 12);
+            ctx.fill();
+            ctx.strokeStyle = bbState.isGameOverPending ? '#F43F5E' : (bbState.combo >= 2 ? '#FB923C' : '#334155');
+            ctx.lineWidth = (bbState.combo >= 2 || bbState.isGameOverPending) ? 2.5 : 2;
+            ctx.stroke();
+
+            const rainbowFill = useRainbowEffect ? getRainbowGradient(ctx, canvas.width, canvas.height) : null;
+
+            const activeDragColor = (bbState.draggingIndex !== -1 && bbState.tray[bbState.draggingIndex])
+                ? (useRainbowEffect ? rainbowFill : bbState.tray[bbState.draggingIndex].color)
+                : '#FFFFFF';
+
+            for (let r = 0; r < BB_SIZE; r++) {
+                for (let c = 0; c < BB_SIZE; c++) {
+                    const x = BB_BOARD_X + c * BB_CELL;
+                    const y = BB_BOARD_Y + r * BB_CELL;
+
+                    ctx.fillStyle = 'rgba(30, 41, 59, 0.85)';
+                    ctx.beginPath();
+                    ctx.roundRect(x + 1.5, y + 1.5, BB_CELL - 3, BB_CELL - 3, 5);
+                    ctx.fill();
+
+                    const cellColor = bbState.board[r][c];
+                    if (cellColor) {
+                        const isAboutToClear = bbState.previewClearRows.includes(r) || bbState.previewClearCols.includes(c);
+                        const drawColor = isAboutToClear ? activeDragColor : (useRainbowEffect ? rainbowFill : cellColor);
+                        drawRoundedBlock(ctx, x, y, BB_CELL, drawColor, 1.0);
+
+                        if (isAboutToClear) {
+                            ctx.save();
+                            ctx.strokeStyle = '#FFFFFF';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.roundRect(x + 2, y + 2, BB_CELL - 4, BB_CELL - 4, 5);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }
+                }
+            }
+
+            if (bbState.draggingIndex !== -1 && bbState.previewPos) {
+                const piece = bbState.tray[bbState.draggingIndex];
+                const shape = piece.shape;
+                const previewColor = useRainbowEffect ? rainbowFill : piece.color;
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            const gx = BB_BOARD_X + (bbState.previewPos.c + c) * BB_CELL;
+                            const gy = BB_BOARD_Y + (bbState.previewPos.r + r) * BB_CELL;
+                            drawRoundedBlock(ctx, gx, gy, BB_CELL, previewColor, 0.42);
+                        }
+                    }
+                }
+            }
+
+            updateAndDrawLockFlashes();
+            updateAndDrawBBPoppingCells();
+            updateAndDrawBBLineFlashes();
+
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(24, BB_TRAY_Y - 8);
+            ctx.lineTo(canvas.width - 24, BB_TRAY_Y - 8);
+            ctx.stroke();
+
+            const slotWidth = canvas.width / 3;
+            for (let i = 0; i < 3; i++) {
+                if (i === bbState.draggingIndex) continue;
+                const piece = bbState.tray[i];
+                if (!piece) continue;
+
+                const shape = piece.shape;
+                const w = shape[0].length * BB_MINI_CELL;
+                const h = shape.length * BB_MINI_CELL;
+                const startX = i * slotWidth + (slotWidth - w) / 2;
+                const startY = BB_TRAY_Y + (115 - h) / 2;
+                const color = useRainbowEffect ? rainbowFill : piece.color;
+
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            drawRoundedBlock(ctx, startX + c * BB_MINI_CELL, startY + r * BB_MINI_CELL, BB_MINI_CELL, color, 1.0);
+                        }
+                    }
+                }
+            }
+
+            if (bbState.draggingIndex !== -1) {
+                const piece = bbState.tray[bbState.draggingIndex];
+                if (piece) {
+                    const shape = piece.shape;
+                    const pieceW = shape[0].length * BB_CELL;
+                    const pieceH = shape.length * BB_CELL;
+                    const drawStartX = bbState.pointerX - pieceW / 2;
+                    const drawStartY = bbState.pointerY - pieceH - 28;
+                    const color = useRainbowEffect ? rainbowFill : piece.color;
+
+                    for (let r = 0; r < shape.length; r++) {
+                        for (let c = 0; c < shape[r].length; c++) {
+                            if (shape[r][c]) {
+                                drawRoundedBlock(ctx, drawStartX + c * BB_CELL, drawStartY + r * BB_CELL, BB_CELL, color, 0.95);
+                            }
+                        }
+                    }
+                }
+            }
+
+            updateAndDrawParticles();
+            updateAndDrawBBFloatingTexts();
+            updateAndDrawBBPraiseBanner();
+
+            ctx.restore();
+        }
+
+        /* =========================================================
+           2. 테트리스 & 테트리스 하드 모드
+           ========================================================= */
+        const COLS = 10, ROWS = 20, BLOCK = 24;
+        const SHAPES = [
+            [],
+            [[1, 1, 1, 1]], // I
+            [[1, 0, 0], [1, 1, 1]], // J
+            [[0, 0, 1], [1, 1, 1]], // L
+            [[1, 1], [1, 1]], // O
+            [[0, 1, 1], [1, 1, 0]], // S
+            [[0, 1, 0], [1, 1, 1]], // T
+            [[1, 1, 0], [0, 1, 1]]  // Z
+        ];
+
+        const TETRIS_COLORS = [
+            null,
+            '#00F0FF', '#0000FF', '#FFA500', '#FFFF00', '#00FF00', '#A000F0', '#FF0000'
+        ];
+
+        let tetrisBoard = [];
+        let particles = []; 
+        let dropTrails = []; 
+        let lockFlashes = [];
+        const tetrisState = { score: 0, lines: 0, piece: null, nextQueue: [], holdPiece: null, canHold: true, lastDropTime: 0 };
+
+        function getDropInterval() {
+            const baseInterval = 500;
+
+            if (currentGame === 'tetris') {
+                return baseInterval / normalTetrisSpeedMultiplier;
+            }
+
+            const extraMultiplier = Math.floor(tetrisState.score / 1000) * 0.2;
+            let currentMultiplier = 1.0 + extraMultiplier;
+            if (currentMultiplier > 5.0) currentMultiplier = 5.0;
+
+            const speedElem = document.getElementById('speedMultiplier');
+            if (speedElem) speedElem.innerText = currentMultiplier.toFixed(1);
+
+            return baseInterval / currentMultiplier;
+        }
+
+        function getRandomPiece() {
+            const id = Math.floor(Math.random() * 7) + 1;
+            return { id: id, shape: SHAPES[id], x: 3, y: 0 };
+        }
+
+        function triggerBlockLockEffect(piece) {
+            if (!useLockEffect || !piece) return;
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+            const color = useRainbowEffect ? '#38BDF8' : TETRIS_COLORS[piece.id];
+
+            for (let r = 0; r < piece.shape.length; r++) {
+                for (let c = 0; c < piece.shape[r].length; c++) {
+                    if (piece.shape[r][c] && piece.y + r >= 0) {
+                        const gx = piece.x + c;
+                        const gy = piece.y + r;
+
+                        lockFlashes.push({
+                            isBB: false,
+                            gridX: gx,
+                            gridY: gy,
+                            alpha: 0.9,
+                            expand: 0,
+                            color: color
+                        });
+
+                        const px = offsetX + gx * BLOCK + BLOCK / 2;
+                        const py = gy * BLOCK + BLOCK;
+                        for (let i = 0; i < 3; i++) {
+                            particles.push({
+                                x: px + (Math.random() - 0.5) * BLOCK,
+                                y: py - 2,
+                                vx: (Math.random() - 0.5) * 4.5,
+                                vy: -(Math.random() * 2.5 + 1),
+                                size: Math.random() * 3 + 2,
+                                color: '#FFFFFF',
+                                alpha: 0.85,
+                                rotation: Math.random() * Math.PI,
+                                vRot: (Math.random() - 0.5) * 0.2,
+                                gravity: 0.15,
+                                isPerfect: false
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        function createShatterEffect(row, col, color) {
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+            const startX = offsetX + col * BLOCK + BLOCK / 2;
+            const startY = row * BLOCK + BLOCK / 2;
+
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: startX,
+                    y: startY,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.8) * 7,
+                    size: Math.random() * 4 + 3,
+                    color: color,
+                    alpha: 1.0,
+                    rotation: Math.random() * Math.PI * 2,
+                    vRot: (Math.random() - 0.5) * 0.3,
+                    gravity: 0.25,
+                    isPerfect: false
+                });
+            }
+        }
+
+        function createPerfectExplosion(count = 220) {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const colors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#00F0FF', '#0000FF', '#A000F0', '#FFFFFF'];
+
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 14 + 4;
+                particles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: 1.0,
+                    rotation: Math.random() * Math.PI * 2,
+                    vRot: (Math.random() - 0.5) * 0.5,
+                    gravity: 0.12,
+                    isPerfect: true
+                });
+            }
+        }
+
+        function addDropTrail(startY, endY) {
+            const p = tetrisState.piece;
+            if (!p) return;
+            const color = useRainbowEffect ? '#38BDF8' : TETRIS_COLORS[p.id];
+            
+            for (let r = 0; r < p.shape.length; r++) {
+                for (let c = 0; c < p.shape[r].length; c++) {
+                    if (p.shape[r][c]) {
+                        for (let y = startY; y <= endY; y++) {
+                            dropTrails.push({
+                                gridX: p.x + c,
+                                gridY: y + r,
+                                alpha: 0.4,
+                                color: color
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.alpha -= p.isPerfect ? 0.015 : 0.025;
+                p.rotation += p.vRot;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+                ctx.fillStyle = p.color;
+
+                if (p.isPerfect) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                } else {
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                }
+                ctx.restore();
+            }
+        }
+
+        function updateAndDrawTrails() {
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+            for (let i = dropTrails.length - 1; i >= 0; i--) {
+                let t = dropTrails[i];
+                t.alpha -= 0.04;
+
+                if (t.alpha <= 0) {
+                    dropTrails.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, t.alpha);
+                ctx.fillStyle = t.color;
+                ctx.fillRect(offsetX + t.gridX * BLOCK + 2, t.gridY * BLOCK + 2, BLOCK - 4, BLOCK - 4);
+                ctx.restore();
+            }
+        }
+
+        function updateAndDrawLockFlashes() {
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+            for (let i = lockFlashes.length - 1; i >= 0; i--) {
+                let f = lockFlashes[i];
+                f.alpha -= 0.065;
+                f.expand += 0.45;
+
+                if (f.alpha <= 0) {
+                    lockFlashes.splice(i, 1);
+                    continue;
+                }
+
+                const cellSize = f.isBB ? BB_CELL : BLOCK;
+                const x = (f.isBB ? BB_BOARD_X : offsetX) + f.gridX * cellSize;
+                const y = (f.isBB ? BB_BOARD_Y : 0) + f.gridY * cellSize;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, f.alpha * 0.75);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+
+                ctx.globalAlpha = Math.max(0, f.alpha);
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x - f.expand, y - f.expand, cellSize + f.expand * 2, cellSize + f.expand * 2);
+                ctx.restore();
+            }
+        }
+
+        function triggerPerfectEffect(titleText, flashTime = 35, particleCount = 220) {
+            perfectFlashTimer = flashTime;
+            createPerfectExplosion(particleCount);
+            perfectPopup.innerText = titleText;
+            perfectPopup.classList.add('show');
+            setTimeout(() => {
+                perfectPopup.classList.remove('show');
+            }, 1300);
+        }
+
+        function startTetris() {
+            tetrisBoard = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            particles = [];
+            dropTrails = [];
+            lockFlashes = [];
+            perfectFlashTimer = 0;
+            tetrisState.score = 0;
+            tetrisState.lines = 0;
+            tetrisState.holdPiece = null;
+            tetrisState.canHold = true;
+            tetrisState.nextQueue = [getRandomPiece(), getRandomPiece()];
+            tetrisState.lastDropTime = Date.now();
+
+            spawnTetrisPiece();
+            if (animationId) cancelAnimationFrame(animationId);
+            gameLoopTetris();
+        }
+
+        function processTetrisHeldKeys(now) {
+            let activeHorizontal = null;
+            if (tetrisHoldState.ArrowLeft.active && tetrisHoldState.ArrowRight.active) {
+                activeHorizontal = tetrisHoldState.ArrowLeft.startTime > tetrisHoldState.ArrowRight.startTime
+                    ? 'ArrowLeft' : 'ArrowRight';
+            } else if (tetrisHoldState.ArrowLeft.active) {
+                activeHorizontal = 'ArrowLeft';
+            } else if (tetrisHoldState.ArrowRight.active) {
+                activeHorizontal = 'ArrowRight';
+            }
+
+            if (activeHorizontal) {
+                const state = tetrisHoldState[activeHorizontal];
+                if (now - state.startTime >= horizontalDasDelay && now - state.lastMoveTime >= state.rate) {
+                    handleTetrisInput(activeHorizontal);
+                    state.lastMoveTime = now;
+                }
+            }
+
+            if (tetrisHoldState.ArrowDown.active) {
+                const state = tetrisHoldState.ArrowDown;
+                if (now - state.startTime >= DEFAULT_DAS_DELAY && now - state.lastMoveTime >= state.rate) {
+                    handleTetrisInput('ArrowDown');
+                    state.lastMoveTime = now;
+                }
+            }
+
+            if (tetrisHoldState.ArrowUp.active) {
+                const state = tetrisHoldState.ArrowUp;
+                if (now - state.startTime >= DEFAULT_DAS_DELAY && now - state.lastMoveTime >= state.rate) {
+                    handleTetrisInput('ArrowUp');
+                    state.lastMoveTime = now;
+                }
+            }
+        }
+
+        function gameLoopTetris() {
+            if (!isGameRunning || !currentGame.startsWith('tetris') || isPaused) return;
+
+            const now = Date.now();
+            processTetrisHeldKeys(now);
+
+            const interval = getDropInterval();
+            if (now - tetrisState.lastDropTime > interval) {
+                dropTetris();
+                tetrisState.lastDropTime = now;
+            }
+
+            renderTetris();
+            if (!isPaused) {
+                animationId = requestAnimationFrame(gameLoopTetris);
+            }
+        }
+
+        function spawnTetrisPiece() {
+            tetrisState.piece = tetrisState.nextQueue.shift();
+            tetrisState.nextQueue.push(getRandomPiece());
+            tetrisState.canHold = true;
+            if (checkTetrisCollide(0, 0)) {
+                gameOver("블록이 가득 찼습니다!", `최종 점수: <b>${tetrisState.score}점</b>`);
+            }
+        }
+
+        function holdTetris() {
+            if (!tetrisState.canHold) return;
+
+            if (!tetrisState.holdPiece) {
+                tetrisState.holdPiece = { id: tetrisState.piece.id, shape: SHAPES[tetrisState.piece.id] };
+                spawnTetrisPiece();
+            } else {
+                const temp = { id: tetrisState.piece.id, shape: SHAPES[tetrisState.piece.id] };
+                const hId = tetrisState.holdPiece.id;
+                tetrisState.piece = { id: hId, shape: SHAPES[hId], x: 3, y: 0 };
+                tetrisState.holdPiece = temp;
+            }
+            tetrisState.canHold = false;
+        }
+
+        function checkTetrisCollide(offsetX, offsetY, shape = tetrisState.piece.shape) {
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c]) {
+                        let newX = tetrisState.piece.x + c + offsetX;
+                        let newY = tetrisState.piece.y + r + offsetY;
+                        if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
+                        if (newY >= 0 && tetrisBoard[newY][newX]) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function getGhostY() {
+            let ghostY = 0;
+            while (!checkTetrisCollide(0, ghostY + 1)) {
+                ghostY++;
+            }
+            return tetrisState.piece.y + ghostY;
+        }
+
+        function handleTetrisInput(key) {
+            if (!isGameRunning || !currentGame.startsWith('tetris')) return;
+            if (key === 'ArrowLeft' && !checkTetrisCollide(-1, 0)) tetrisState.piece.x--;
+            if (key === 'ArrowRight' && !checkTetrisCollide(1, 0)) tetrisState.piece.x++;
+            if (key === 'ArrowDown') {
+                const startY = tetrisState.piece.y;
+                dropTetris();
+                addDropTrail(startY, tetrisState.piece.y);
+                tetrisState.lastDropTime = Date.now();
+            }
+            if (key === 'ArrowUp') rotateTetris();
+            if (key === 'Space' || key === ' ') {
+                const startY = tetrisState.piece.y;
+                const ghostY = getGhostY();
+                addDropTrail(startY, ghostY);
+                tetrisState.piece.y = ghostY;
+                dropTetris();
+                tetrisState.lastDropTime = Date.now();
+            }
+        }
+
+        function rotateTetris() {
+            const rotated = tetrisState.piece.shape[0].map((_, i) =>
+                tetrisState.piece.shape.map(row => row[i]).reverse()
+            );
+            if (!checkTetrisCollide(0, 0, rotated)) {
+                tetrisState.piece.shape = rotated;
+            } else if (!checkTetrisCollide(-1, 0, rotated)) {
+                tetrisState.piece.x--;
+                tetrisState.piece.shape = rotated;
+            } else if (!checkTetrisCollide(1, 0, rotated)) {
+                tetrisState.piece.x++;
+                tetrisState.piece.shape = rotated;
+            }
+        }
+
+        function dropTetris() {
+            if (!checkTetrisCollide(0, 1)) {
+                const startY = tetrisState.piece.y;
+                tetrisState.piece.y++;
+                addDropTrail(startY, tetrisState.piece.y);
+            } else {
+                const p = tetrisState.piece;
+                triggerBlockLockEffect(p);
+                playSfxPlace();
+
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c] && p.y + r >= 0) {
+                            tetrisBoard[p.y + r][p.x + c] = p.id;
+                        }
+                    }
+                }
+
+                let clearedCount = 0;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (tetrisBoard[r].every(cell => cell !== 0)) {
+                        for (let c = 0; c < COLS; c++) {
+                            const blockId = tetrisBoard[r][c];
+                            const pColor = useRainbowEffect ? '#FACC15' : TETRIS_COLORS[blockId];
+                            createShatterEffect(r, c, pColor);
+                        }
+
+                        tetrisBoard.splice(r, 1);
+                        tetrisBoard.unshift(Array(COLS).fill(0));
+                        clearedCount++;
+                        r++;
+                    }
+                }
+
+                if (clearedCount > 0) {
+                    playSfxClear(1, clearedCount);
+                    const isBoardEmpty = tetrisBoard.every(row => row.every(cell => cell === 0));
+                    
+                    let earnedScore = clearedCount * 100;
+                    
+                    if (isBoardEmpty) {
+                        earnedScore *= 3;
+                        triggerPerfectEffect(customPerfectText, 40, 220);
+                    } else if (clearedCount >= 3) {
+                        earnedScore *= 2;
+                        triggerPerfectEffect(customMiniPerfectText, 25, 120);
+                    }
+
+                    tetrisState.lines += clearedCount;
+                    tetrisState.score += earnedScore;
+                    document.getElementById('score').innerText = tetrisState.score;
+                    document.getElementById('lines').innerText = tetrisState.lines;
+                }
+
+                spawnTetrisPiece();
+            }
+        }
+
+        function drawPiecePreview(ctxRef, pieceObj) {
+            ctxRef.clearRect(0, 0, 55, 55);
+            if (!pieceObj) return;
+            const shape = pieceObj.shape;
+            const miniBlock = 11;
+            const startX = (55 - shape[0].length * miniBlock) / 2;
+            const startY = (55 - shape.length * miniBlock) / 2;
+
+            for (let r = 0; r < shape.length; r++) {
+                for (let c = 0; c < shape[r].length; c++) {
+                    if (shape[r][c]) {
+                        ctxRef.fillStyle = useRainbowEffect ? getRainbowGradient(ctxRef, 55, 55) : TETRIS_COLORS[pieceObj.id];
+                        ctxRef.fillRect(startX + c * miniBlock, startY + r * miniBlock, miniBlock - 1, miniBlock - 1);
+                    }
+                }
+            }
+        }
+
+        function renderTetris() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const offsetX = (canvas.width - COLS * BLOCK) / 2;
+
+            if (perfectFlashTimer > 0) {
+                perfectFlashTimer--;
+                ctx.save();
+                ctx.globalAlpha = Math.min(1.0, perfectFlashTimer / 15);
+                ctx.fillStyle = getRainbowGradient(ctx, canvas.width, canvas.height, 0.025);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            } else if (useRainbowEffect) {
+                ctx.save();
+                ctx.globalAlpha = 0.25;
+                ctx.fillStyle = getRainbowGradient(ctx, COLS * BLOCK, ROWS * BLOCK, 0.0008);
+                ctx.fillRect(offsetX, 0, COLS * BLOCK, ROWS * BLOCK);
+                ctx.restore();
+            }
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            for (let c = 0; c <= COLS; c++) {
+                ctx.beginPath(); ctx.moveTo(offsetX + c * BLOCK, 0); ctx.lineTo(offsetX + c * BLOCK, ROWS * BLOCK); ctx.stroke();
+            }
+            for (let r = 0; r <= ROWS; r++) {
+                ctx.beginPath(); ctx.moveTo(offsetX, r * BLOCK); ctx.lineTo(offsetX + COLS * BLOCK, r * BLOCK); ctx.stroke();
+            }
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const blockId = tetrisBoard[r][c];
+                    if (blockId) {
+                        ctx.fillStyle = useRainbowEffect ? getRainbowGradient(ctx, canvas.width, canvas.height) : TETRIS_COLORS[blockId];
+                        ctx.fillRect(offsetX + c * BLOCK + 1, r * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+                    }
+                }
+            }
+
+            updateAndDrawTrails();
+            updateAndDrawLockFlashes();
+
+            if (tetrisState.piece) {
+                const p = tetrisState.piece;
+                const ghostY = getGhostY();
+                const currentPieceColor = useRainbowEffect ? getRainbowGradient(ctx, canvas.width, canvas.height) : TETRIS_COLORS[p.id];
+
+                ctx.fillStyle = currentPieceColor;
+                ctx.globalAlpha = 0.25;
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c]) {
+                            const gx = offsetX + (p.x + c) * BLOCK;
+                            const gy = ghostY * BLOCK + r * BLOCK;
+                            ctx.fillRect(gx + 1, gy + 1, BLOCK - 2, BLOCK - 2);
+                        }
+                    }
+                }
+
+                ctx.globalAlpha = 1.0;
+                ctx.strokeStyle = currentPieceColor;
+                ctx.lineWidth = 2;
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c]) {
+                            const gx = offsetX + (p.x + c) * BLOCK;
+                            const gy = ghostY * BLOCK + r * BLOCK;
+                            ctx.strokeRect(gx + 2, gy + 2, BLOCK - 4, BLOCK - 4);
+                        }
+                    }
+                }
+
+                ctx.fillStyle = currentPieceColor;
+                for (let r = 0; r < p.shape.length; r++) {
+                    for (let c = 0; c < p.shape[r].length; c++) {
+                        if (p.shape[r][c]) {
+                            ctx.fillRect(offsetX + (p.x + c) * BLOCK + 1, (p.y + r) * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+                        }
+                    }
+                }
+            }
+
+            updateAndDrawParticles();
+
+            drawPiecePreview(holdCtx, tetrisState.holdPiece);
+            drawPiecePreview(nextCtx, tetrisState.nextQueue[0]);
+        }
+
+        updateMoveSensitivity(5);
+        switchGame('blockBlast');
+    </script>
+</body>
+</html>
